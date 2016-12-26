@@ -44,7 +44,7 @@ func main() {
 }
 
 func timer(ctx context.Context, cli *clientv3.Client) {
-	for true {
+	for {
 		go dispatch.GetMqttPanel(ctx, cli)
 		time.Sleep(1 * time.Second)
 	}
