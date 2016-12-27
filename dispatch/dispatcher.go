@@ -3,8 +3,8 @@ package dispatch
 import (
 	"fmt"
 	"log"
-
-	"container/list"
+	"strconv"
+	"strings"
 
 	"github.com/coreos/etcd/clientv3"
 	"golang.org/x/net/context"
@@ -19,22 +19,90 @@ var dispatchCount = 0
 //HostInfo stores the information of node
 type HostInfo struct {
 	Count         int64
-	HostsInfoList list.List
+	HostsInfoList []string
 }
 
 var h HostInfo
 
 //Dispatch ...
-func Dispatch(ctx context.Context, cli *clientv3.Client) {
+func Dispatch(ctx context.Context, cli *clientv3.Client, panelInfo string) {
 	hostCount := GetHostsCount(ctx, cli)
 
 	if int64(dispatchCount) < hostCount {
-		//do dispatch
+		host := h.HostsInfoList[dispatchCount]
+		//set to h.HostsInfoList to etcd
+		//get value from etcd
+		resp, err := cli.Get(ctx, host)
+
+		var connectedValue string
+		for _, ev := range resp.Kvs {
+			connectedValue = string(ev.Value)
+			fmt.Println("key: ", string(ev.Key))
+			fmt.Println("connectedValue: ", connectedValue)
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		connectedValueToInt, err := strconv.Atoi(connectedValue)
+		connectedValueToInt++
+		connectedValue = strconv.Itoa(connectedValueToInt)
+
+		_, err2 := cli.Put(ctx, host, connectedValue)
+
+		if err2 != nil {
+			log.Fatal(err2)
+		}
+
+		//update /mqtt/panel/001d940361c0 10.0.1.xx
+		hostSplit := strings.Split(host, "/")
+		hostIP := hostSplit[len(hostSplit)-1]
+		_, err3 := cli.Put(ctx, panelInfo, hostIP)
+		if err3 != nil {
+			log.Fatal(err)
+		}
+
 		dispatchCount++
-		fmt.Println(dispatchCount)
+
 	} else {
 		dispatchCount = 0
-		//do dispatch
+		fmt.Println(h.HostsInfoList[dispatchCount])
+
+		host := h.HostsInfoList[dispatchCount]
+		//set to h.HostsInfoList to etcd
+		//get value from etcd
+		resp, err := cli.Get(ctx, host)
+
+		var connectedValue string
+		for _, ev := range resp.Kvs {
+			connectedValue = string(ev.Value)
+			fmt.Println("key: ", string(ev.Key))
+			fmt.Println("connectedValue: ", connectedValue)
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		connectedValueToInt, err := strconv.Atoi(connectedValue)
+		connectedValueToInt++
+		connectedValue = strconv.Itoa(connectedValueToInt)
+
+		_, err2 := cli.Put(ctx, host, connectedValue)
+
+		if err2 != nil {
+			log.Fatal(err2)
+		}
+
+		//update /mqtt/panel/001d940361c0 10.0.1.xx
+		hostSplit := strings.Split(host, "/")
+		hostIP := hostSplit[len(hostSplit)-1]
+		_, err3 := cli.Put(ctx, panelInfo, hostIP)
+		if err3 != nil {
+			log.Fatal(err)
+		}
+
 		dispatchCount++
 		fmt.Println(dispatchCount)
 	}
@@ -44,15 +112,20 @@ func Dispatch(ctx context.Context, cli *clientv3.Client) {
 // GetMqttPanel function
 func GetMqttPanel(ctx context.Context, cli *clientv3.Client) {
 
-	Dispatch(ctx, cli)
-
 	resp, err := cli.Get(ctx, "/mqtt/panel/", clientv3.WithPrefix(), clientv3.WithSort(clientv3.SortByKey, clientv3.SortDescend))
 
 	for _, ev := range resp.Kvs {
-		k := ev.Key
-		v := ev.Value
+		k := string(ev.Key)
+		v := string(ev.Value)
 
-		fmt.Println(string(k), string(v))
+		if v == "undefined" {
+			fmt.Println("undefined")
+
+			fmt.Println(k)
+			fmt.Println(v)
+
+			Dispatch(ctx, cli, k)
+		}
 	}
 
 	if err != nil {
@@ -63,18 +136,16 @@ func GetMqttPanel(ctx context.Context, cli *clientv3.Client) {
 //GetHostsCount function
 func GetHostsCount(ctx context.Context, cli *clientv3.Client) int64 {
 	resp, err := cli.Get(ctx, "/mqtt/sa/host/", clientv3.WithPrefix(), clientv3.WithSort(clientv3.SortByKey, clientv3.SortDescend))
-	hostList := list.New()
-
-	for _, ev := range resp.Kvs {
-		hostList.PushBack(string(ev.Key))
+	h.HostsInfoList = make([]string, resp.Count)
+	for i, ev := range resp.Kvs {
+		h.HostsInfoList[i] = string(ev.Key) //get host information from etcd
 	}
 
-	h.Count = resp.Count
-	h.HostsInfoList = *hostList
+	h.Count = resp.Count //get hosts count
 
-	for e := h.HostsInfoList.Front(); e != nil; e = e.Next() {
-		fmt.Println("HostsInfoList: ", e.Value)
-	}
+	// for _, value := range h.HostsInfoList {
+	// 	fmt.Println("value: " + value)
+	// }
 
 	if err != nil {
 		log.Fatal(err)
