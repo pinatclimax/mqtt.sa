@@ -15,14 +15,13 @@ import (
 //etcdctl put /mqtt/sa/host/10.0.1.25 0
 
 var dispatchCount = 0
+var h HostInfo
 
 //HostInfo stores the information of node
 type HostInfo struct {
 	Count         int64
 	HostsInfoList []string
 }
-
-var h HostInfo
 
 //Dispatch ...
 func Dispatch(ctx context.Context, cli *clientv3.Client, panelInfo string) {

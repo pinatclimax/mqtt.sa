@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"climax.com/mqtt.sa/dispatch"
+	"climax.com/mqtt.sa/healthz"
 
 	"github.com/coreos/etcd/clientv3"
 	"golang.org/x/net/context"
@@ -21,23 +22,10 @@ func main() {
 	}
 	defer cli.Close()
 
-	//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	ctx := context.TODO()
-	// _, err = cli.Put(ctx, "/panel/001d940361c0", "climax")
 
-	// resp, err := cli.Get(ctx, "/nodes/", clientv3.WithPrefix(), clientv3.WithSort(clientv3.SortByKey, clientv3.SortDescend))
-	// for _, ev := range resp.Kvs {
-	// 	// fmt.Printf("%s : %s\n", ev.Key, ev.Value)
-	// 	k := ev.Key
-	// 	v := ev.Value
-
-	// 	fmt.Println(string(k), string(v))
-
-	// }
-
-	// fmt.Println(resp.Count)
 	go timer(ctx, cli)
-	//time.Sleep(10 * time.Second)
+	go health(ctx, cli)
 
 	<-make(chan int)
 
@@ -46,6 +34,13 @@ func main() {
 func timer(ctx context.Context, cli *clientv3.Client) {
 	for {
 		go dispatch.GetMqttPanel(ctx, cli)
+		time.Sleep(1 * time.Second)
+	}
+}
+
+func health(ctx context.Context, cli *clientv3.Client) {
+	for {
+		go healthz.Check()
 		time.Sleep(1 * time.Second)
 	}
 }
