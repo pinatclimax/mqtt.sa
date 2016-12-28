@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 
+	"climax.com/mqtt.sa/client"
 	"climax.com/mqtt.sa/dispatch"
 	"climax.com/mqtt.sa/healthz"
 
@@ -26,6 +27,7 @@ func main() {
 
 	go timer(ctx, cli)
 	go health(ctx, cli)
+	client.BootClient()
 
 	<-make(chan int)
 
