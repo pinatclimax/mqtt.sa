@@ -4,9 +4,7 @@ import (
 	"log"
 	"time"
 
-	"climax.com/mqtt.sa/client"
 	"climax.com/mqtt.sa/dispatch"
-	"climax.com/mqtt.sa/healthz"
 
 	"github.com/coreos/etcd/clientv3"
 	"golang.org/x/net/context"
@@ -26,8 +24,8 @@ func main() {
 	ctx := context.TODO()
 
 	go timer(ctx, cli)
-	go health(ctx, cli)
-	client.BootClient()
+	// go health(ctx, cli)
+	// client.BootClient()
 
 	<-make(chan int)
 
@@ -35,14 +33,14 @@ func main() {
 
 func timer(ctx context.Context, cli *clientv3.Client) {
 	for {
-		go dispatch.GetMqttPanel(ctx, cli)
+		dispatch.GetMqttPanel(ctx, cli)
 		time.Sleep(1 * time.Second)
 	}
 }
 
-func health(ctx context.Context, cli *clientv3.Client) {
-	for {
-		go healthz.Check()
-		time.Sleep(1 * time.Second)
-	}
-}
+// func health(ctx context.Context, cli *clientv3.Client) {
+// 	for {
+// 		go healthz.Check()
+// 		time.Sleep(1 * time.Second)
+// 	}
+// }

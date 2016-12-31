@@ -49,25 +49,24 @@ func Dispatch(ctx context.Context, cli *clientv3.Client, panelInfo string) {
 		connectedValueToInt++
 		connectedValue = strconv.Itoa(connectedValueToInt)
 
-		_, err2 := cli.Put(ctx, host, connectedValue)
-
-		if err2 != nil {
-			log.Fatal(err2)
-		}
+		//_, err2 := cli.Put(ctx, host, connectedValue)
+		etcd.Upsert(host, connectedValue)
 
 		//update /mqtt/panel/001d940361c0 10.0.1.xx
 		hostSplit := strings.Split(host, "/")
 		hostIP := hostSplit[len(hostSplit)-1]
-		_, err3 := cli.Put(ctx, panelInfo, hostIP)
-		if err3 != nil {
-			log.Fatal(err)
-		}
+		// _, err3 := cli.Put(ctx, panelInfo, hostIP)
+		// if err3 != nil {
+		// 	log.Fatal(err)
+		// }
+
+		etcd.Upsert(panelInfo, hostIP)
 
 		dispatchCount++
 
 		mac := getPanelMac(panelInfo)
 		key := "/mqtt/sa/connected/" + hostIP + "/" + mac
-		etcd.Upsert(ctx, cli, key, mac)
+		etcd.Upsert(key, mac)
 
 	} else {
 		dispatchCount = 0
@@ -93,22 +92,30 @@ func Dispatch(ctx context.Context, cli *clientv3.Client, panelInfo string) {
 		connectedValueToInt++
 		connectedValue = strconv.Itoa(connectedValueToInt)
 
-		_, err2 := cli.Put(ctx, host, connectedValue)
+		// _, err2 := cli.Put(ctx, host, connectedValue)
 
-		if err2 != nil {
-			log.Fatal(err2)
-		}
+		// if err2 != nil {
+		// 	log.Fatal(err2)
+		// }
+
+		etcd.Upsert(host, connectedValue)
 
 		//update /mqtt/panel/001d940361c0 10.0.1.xx
 		hostSplit := strings.Split(host, "/")
 		hostIP := hostSplit[len(hostSplit)-1]
-		_, err3 := cli.Put(ctx, panelInfo, hostIP)
-		if err3 != nil {
-			log.Fatal(err)
-		}
+		// _, err3 := cli.Put(ctx, panelInfo, hostIP)
+		// if err3 != nil {
+		// 	log.Fatal(err)
+		// }
+
+		etcd.Upsert(panelInfo, hostIP)
 
 		dispatchCount++
 		fmt.Println(dispatchCount)
+
+		mac := getPanelMac(panelInfo)
+		key := "/mqtt/sa/connected/" + hostIP + "/" + mac
+		etcd.Upsert(key, mac)
 	}
 
 }
