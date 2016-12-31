@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"climax.com/mqtt.sa/etcd"
 	"github.com/coreos/etcd/clientv3"
 	"golang.org/x/net/context"
 )
@@ -64,6 +65,10 @@ func Dispatch(ctx context.Context, cli *clientv3.Client, panelInfo string) {
 		}
 
 		dispatchCount++
+
+		mac := getPanelMac(panelInfo)
+		key := "/mqtt/sa/connected/" + hostIP + "/" + mac
+		etcd.Upsert(ctx, cli, key, mac)
 
 	} else {
 		dispatchCount = 0
@@ -152,4 +157,9 @@ func GetHostsCount(ctx context.Context, cli *clientv3.Client) int64 {
 	}
 
 	return resp.Count
+}
+
+func getPanelMac(panelInfo string) string {
+	str := strings.Split(panelInfo, "/")
+	return str[len(str)-1]
 }
