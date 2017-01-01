@@ -1,41 +1,46 @@
 package main
 
 import (
-	"log"
 	"time"
 
 	"climax.com/mqtt.sa/dispatch"
 
-	"github.com/coreos/etcd/clientv3"
-	"golang.org/x/net/context"
+	"os"
 )
 
 func main() {
 
-	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   []string{"10.0.1.11:2379", "10.0.1.12:2379"},
-		DialTimeout: 5 * time.Second,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer cli.Close()
-
-	ctx := context.TODO()
-
-	go timer(ctx, cli)
 	// go health(ctx, cli)
 	// client.BootClient()
+	runType := os.Args[1]
+	if runType == "master" {
+		runType = "master"
+	} else {
+		runType = "slave"
+	}
+
+	switch runType {
+	case "master":
+		go masterGo()
+		go slaveGo()
+	case "slave":
+		go slaveGo()
+
+	}
 
 	<-make(chan int)
 
 }
 
-func timer(ctx context.Context, cli *clientv3.Client) {
+func masterGo() {
 	for {
-		dispatch.GetMqttPanel(ctx, cli)
+		dispatch.GetMqttPanel()
 		time.Sleep(1 * time.Second)
 	}
+}
+
+func slaveGo() {
+
 }
 
 // func health(ctx context.Context, cli *clientv3.Client) {
