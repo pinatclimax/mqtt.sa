@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"climax.com/mqtt.sa/dispatch"
+	"climax.com/mqtt.sa/slave"
 
 	"os"
 )
@@ -40,7 +41,7 @@ func masterGo() {
 }
 
 func slaveGo() {
-
+	slave.SubTopic()
 }
 
 // func health(ctx context.Context, cli *clientv3.Client) {
