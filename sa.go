@@ -41,7 +41,7 @@ func masterGo() {
 }
 
 func slaveGo() {
-	slave.SubTopic()
+	slave.SlaveStart()
 }
 
 // func health(ctx context.Context, cli *clientv3.Client) {

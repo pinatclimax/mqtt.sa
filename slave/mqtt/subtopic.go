@@ -1,13 +1,11 @@
-package slave
+package mqtt
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"sync"
 
 	"climax.com/mqtt.sa/etcd"
-
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -16,10 +14,9 @@ var f MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 	fmt.Printf("MSG: %s\n", msg.Payload())
 }
 
-func SubTopic() {
+func SubTopics(slaveHostIP string) {
+	fmt.Println("slaveHostIP:" + slaveHostIP)
 	var wg sync.WaitGroup
-	slaveIP := getSlaveHostIP()
-
 	opts := MQTT.NewClientOptions().AddBroker("tcp://10.15.8.129:1883")
 	opts.SetDefaultPublishHandler(f)
 
@@ -29,7 +26,7 @@ func SubTopic() {
 		panic(token.Error())
 	}
 
-	resp := etcd.Select("/mqtt/sa/connected/" + slaveIP)
+	resp := etcd.Select("/mqtt/sa/connected/" + slaveHostIP)
 	wg.Add(int(resp.Count))
 
 	for _, mac := range resp.Kvs {
@@ -37,10 +34,7 @@ func SubTopic() {
 	}
 
 	wg.Wait()
-	fmt.Println("sub finished")
-
-	etcd.ConnectedWatcher(slaveIP)
-
+	etcd.ConnectedWatcher(slaveHostIP)
 }
 
 func subTestTopic(c MQTT.Client, topic string, wg *sync.WaitGroup) {
@@ -50,27 +44,4 @@ func subTestTopic(c MQTT.Client, topic string, wg *sync.WaitGroup) {
 	}
 	fmt.Println("topic:", topic)
 	wg.Done()
-}
-
-func getSlaveHostIP() string {
-
-	var addr string
-
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
-		os.Exit(1)
-	}
-
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				resp := etcd.Select("/mqtt/sa/connected/" + ipnet.IP.String())
-				if resp.Count != 0 {
-					addr = ipnet.IP.String()
-				}
-			}
-		}
-	}
-	return addr
 }
