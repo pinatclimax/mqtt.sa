@@ -1,6 +1,7 @@
 package main
 
 import (
+	"runtime"
 	"time"
 
 	"climax.com/mqtt.sa/dispatch"
@@ -11,8 +12,8 @@ import (
 
 func main() {
 
-	// go health(ctx, cli)
-	// client.BootClient()
+	runtime.GOMAXPROCS(4)
+
 	runType := os.Args[1]
 	if runType == "master" {
 		runType = "master"

@@ -20,7 +20,7 @@ func SubTopic() {
 	var wg sync.WaitGroup
 	slaveIP := getSlaveHostIP()
 
-	opts := MQTT.NewClientOptions().AddBroker("tcp://10.15.8.129:1883")
+	opts := MQTT.NewClientOptions().AddBroker("tcp://192.168.99.11:1883")
 	opts.SetDefaultPublishHandler(f)
 
 	//create and start a client using the above ClientOptions
@@ -33,17 +33,16 @@ func SubTopic() {
 	wg.Add(int(resp.Count))
 
 	for _, mac := range resp.Kvs {
-		go subTestTopic(c, string(mac.Value), &wg)
+		go SubTestTopic(c, string(mac.Value), &wg)
 	}
 
 	wg.Wait()
 	fmt.Println("sub finished")
 
-	etcd.ConnectedWatcher(slaveIP)
-
+	etcd.ConnectedWatcher(slaveIP, c)
 }
 
-func subTestTopic(c MQTT.Client, topic string, wg *sync.WaitGroup) {
+func SubTestTopic(c MQTT.Client, topic string, wg *sync.WaitGroup) {
 	if token := c.Subscribe(topic, 0, nil); token.Wait() && token.Error() != nil {
 		fmt.Println(token.Error())
 		os.Exit(1)
